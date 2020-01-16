@@ -69,7 +69,7 @@ function compileJs()
     './node_modules/bootstrap/dist/js/*.js',
     './node_modules/datatables.net/js/*.js',
     './node_modules/datatables.net-bs4/js/*.js',
-    //'./node_modules/@fortawesome/fontawesome-free/js/all.min.js',
+    './node_modules/@fortawesome/fontawesome-free/js/all.min.js',
     './js/sb-admin-2.js', 
     './js/demo/*.js' 
   ];
