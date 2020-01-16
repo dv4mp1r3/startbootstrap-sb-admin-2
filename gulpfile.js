@@ -12,6 +12,8 @@ const plumber = require("gulp-plumber");
 const rename = require("gulp-rename");
 const sass = require("gulp-sass");
 const uglify = require("gulp-uglify");
+const concat = require("gulp-concat");
+const concatCss = require('gulp-concat-css');
 
 // Load package.json for banner
 const pkg = require('./package.json');
@@ -45,6 +47,75 @@ function browserSyncReload(done) {
 // Clean vendor
 function clean() {
   return del(["./vendor/"]);
+}
+
+function cleanCompiled()
+{
+  return del([ 
+    "./build/",
+    "./webfonts"  
+  ]);
+}
+
+function compileJs()
+{
+  var files = [
+    './node_modules/jquery/dist/jquery.min.js',
+    //'!./node_modules/jquery/dist/core.js',
+    './node_modules/jquery.easing/jquery.easing.compatibility.js',
+    './node_modules/jquery.easing/jquery.easing.min.js',    
+    './node_modules/chart.js/dist/Chart.min.js',
+    './node_modules/chart.js/dist/Chart.bundle.min.js',
+    './node_modules/bootstrap/dist/js/*.js',
+    './node_modules/datatables.net/js/*.js',
+    './node_modules/datatables.net-bs4/js/*.js',
+    //'./node_modules/@fortawesome/fontawesome-free/js/all.min.js',
+    './js/sb-admin-2.js', 
+    './js/demo/*.js' 
+  ];
+
+  return gulp.src(files)
+      .pipe(concat('app.js'))
+      .pipe(gulp.dest('./build'))
+      //.pipe(uglify())
+      .pipe(gulp.dest('./build'));
+
+}
+
+function cleanAfterCompile()
+{
+  return del([
+    "./css/bootstrap*.css", 
+    "./css/dataTables*.css",
+    "./css/all.min.css"
+  ]);
+}
+
+function compileCss()
+{
+  var bootstrapSCSS = gulp.src('./node_modules/bootstrap/scss/**/*')
+  .pipe(sass().on('error', sass.logError))
+  .pipe(gulp.dest('./css'));
+
+  var dataTables = gulp.src([
+    './node_modules/datatables.net-bs4/css/*.css'
+  ])
+  .pipe(gulp.dest('./css'));
+
+  var fontAwesomeCss = gulp.src('./node_modules/@fortawesome/fontawesome-free/css/all.min.css')
+  .pipe(gulp.dest('./css'));
+
+  var compiledCss = gulp.src('./css/*.css')
+  .pipe(concatCss("bundle.css"))
+  .pipe(gulp.dest('./build'));
+
+  return merge(bootstrapSCSS, dataTables, fontAwesomeCss, compiledCss);
+}
+
+function copyFonts()
+{
+  return gulp.src('./node_modules/@fortawesome/fontawesome-free/webfonts/*')
+  .pipe(gulp.dest('./webfonts'));
 }
 
 // Bring third party dependencies from node_modules into vendor directory
@@ -134,6 +205,7 @@ function watchFiles() {
 const vendor = gulp.series(clean, modules);
 const build = gulp.series(vendor, gulp.parallel(css, js));
 const watch = gulp.series(build, gulp.parallel(watchFiles, browserSync));
+const compile = gulp.series(cleanCompiled, gulp.parallel(compileCss, compileJs, copyFonts), cleanAfterCompile);
 
 // Export tasks
 exports.css = css;
@@ -143,3 +215,4 @@ exports.vendor = vendor;
 exports.build = build;
 exports.watch = watch;
 exports.default = build;
+exports.compile = compile;
